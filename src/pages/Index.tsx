@@ -1,11 +1,26 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState } from "react";
+import { WorkspaceHeader } from "@/components/workspace/WorkspaceHeader";
+import { FileExplorer } from "@/components/workspace/FileExplorer";
+import { CodeEditor } from "@/components/workspace/CodeEditor";
+import { PreviewPane } from "@/components/workspace/PreviewPane";
+import { AIChatPanel } from "@/components/workspace/AIChatPanel";
 
 const Index = () => {
+  const [isAIChatOpen, setIsAIChatOpen] = useState(true);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <div className="h-screen flex flex-col bg-background overflow-hidden">
+      <WorkspaceHeader onToggleAIChat={() => setIsAIChatOpen(!isAIChatOpen)} />
+      
+      <div className="flex-1 flex overflow-hidden relative">
+        <FileExplorer />
+        
+        <div className="flex-1 flex">
+          <CodeEditor />
+          <PreviewPane />
+        </div>
+
+        <AIChatPanel isOpen={isAIChatOpen} onClose={() => setIsAIChatOpen(false)} />
       </div>
     </div>
   );

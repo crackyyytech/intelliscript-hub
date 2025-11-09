@@ -57,6 +57,21 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        workspace: {
+          chrome: "hsl(var(--workspace-chrome))",
+        },
+        editor: {
+          bg: "hsl(var(--editor-bg))",
+        },
+        ai: {
+          from: "hsl(var(--ai-gradient-from))",
+          to: "hsl(var(--ai-gradient-to))",
+        },
+        success: "hsl(var(--success))",
+        warning: "hsl(var(--warning))",
+      },
+      backgroundImage: {
+        'ai-gradient': 'linear-gradient(135deg, hsl(var(--ai-gradient-from)), hsl(var(--ai-gradient-to)))',
       },
       borderRadius: {
         lg: "var(--radius)",
