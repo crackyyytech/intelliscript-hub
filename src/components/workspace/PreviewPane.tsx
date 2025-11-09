@@ -1,9 +1,48 @@
 import { Monitor, Smartphone, Tablet, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
-export const PreviewPane = () => {
+interface PreviewPaneProps {
+  code?: string;
+}
+
+export const PreviewPane = ({ code }: PreviewPaneProps) => {
   const [device, setDevice] = useState<"desktop" | "tablet" | "mobile">("desktop");
+  const [previewKey, setPreviewKey] = useState(0);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  useEffect(() => {
+    if (iframeRef.current && code) {
+      const iframeDoc = iframeRef.current.contentDocument;
+      if (iframeDoc) {
+        const html = `
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <meta charset="UTF-8" />
+              <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+              <script src="https://cdn.tailwindcss.com"></script>
+              <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+              <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+              <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+            </head>
+            <body>
+              <div id="root"></div>
+              <script type="text/babel">
+                ${code}
+                
+                const root = ReactDOM.createRoot(document.getElementById('root'));
+                root.render(<App />);
+              </script>
+            </body>
+          </html>
+        `;
+        iframeDoc.open();
+        iframeDoc.write(html);
+        iframeDoc.close();
+      }
+    }
+  }, [code, previewKey]);
 
   const getPreviewWidth = () => {
     switch (device) {
@@ -48,37 +87,20 @@ export const PreviewPane = () => {
             <Smartphone className="w-3.5 h-3.5" />
           </Button>
           <div className="w-px h-5 bg-border mx-1" />
-          <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setPreviewKey(prev => prev + 1)}>
             <RefreshCw className="w-3.5 h-3.5" />
           </Button>
         </div>
       </div>
       
       <div className="flex-1 flex items-center justify-center bg-muted/20 p-4 overflow-auto">
-        <div 
-          className="bg-background rounded-lg shadow-2xl overflow-hidden transition-all duration-300"
+        <iframe
+          ref={iframeRef}
+          title="Preview"
+          className="bg-background rounded-lg shadow-2xl transition-all duration-300 border-0"
           style={{ width: getPreviewWidth(), height: "100%" }}
-        >
-          <div className="min-h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center p-8">
-            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
-              <h1 className="text-3xl font-bold text-gray-800 mb-6">
-                Welcome to AI Workspace
-              </h1>
-              <p className="text-gray-600 mb-4">
-                This is a live preview of your React code!
-              </p>
-              <div className="flex items-center gap-4 justify-center">
-                <button className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition">
-                  -
-                </button>
-                <span className="text-2xl font-bold text-gray-800">0</span>
-                <button className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition">
-                  +
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+          sandbox="allow-scripts"
+        />
       </div>
     </div>
   );

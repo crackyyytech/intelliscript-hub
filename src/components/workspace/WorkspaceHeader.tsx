@@ -1,11 +1,17 @@
 import { Button } from "@/components/ui/button";
-import { Code2, Sparkles, Play, Settings, Save } from "lucide-react";
+import { Code2, Sparkles, Play, Settings, Save, LogOut } from "lucide-react";
+import { ProjectSelector } from "./ProjectSelector";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface WorkspaceHeaderProps {
   onToggleAIChat: () => void;
+  currentProjectId: string | null;
+  onProjectSelect: (projectId: string) => void;
+  onSave: () => void;
 }
 
-export const WorkspaceHeader = ({ onToggleAIChat }: WorkspaceHeaderProps) => {
+export const WorkspaceHeader = ({ onToggleAIChat, currentProjectId, onProjectSelect, onSave }: WorkspaceHeaderProps) => {
+  const { signOut } = useAuth();
   return (
     <header className="h-12 bg-workspace-chrome border-b border-border flex items-center justify-between px-4">
       <div className="flex items-center gap-4">
@@ -18,13 +24,14 @@ export const WorkspaceHeader = ({ onToggleAIChat }: WorkspaceHeaderProps) => {
         
         <div className="h-6 w-px bg-border" />
         
-        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-          <span>index.tsx</span>
-        </div>
+        <ProjectSelector
+          currentProjectId={currentProjectId}
+          onProjectSelect={onProjectSelect}
+        />
       </div>
 
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="sm" className="h-8 gap-2">
+        <Button variant="ghost" size="sm" className="h-8 gap-2" onClick={onSave}>
           <Save className="w-4 h-4" />
           Save
         </Button>
@@ -43,6 +50,10 @@ export const WorkspaceHeader = ({ onToggleAIChat }: WorkspaceHeaderProps) => {
         </Button>
         <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
           <Settings className="w-4 h-4" />
+        </Button>
+        <Button variant="ghost" size="sm" className="h-8 gap-2" onClick={signOut}>
+          <LogOut className="w-4 h-4" />
+          Sign Out
         </Button>
       </div>
     </header>

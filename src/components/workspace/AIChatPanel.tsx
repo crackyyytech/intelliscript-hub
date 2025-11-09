@@ -4,6 +4,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sparkles, Send, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface Message {
   role: "user" | "assistant";
@@ -13,9 +15,10 @@ interface Message {
 interface AIChatPanelProps {
   isOpen: boolean;
   onClose: () => void;
+  currentCode?: string;
 }
 
-export const AIChatPanel = ({ isOpen, onClose }: AIChatPanelProps) => {
+export const AIChatPanel = ({ isOpen, onClose, currentCode }: AIChatPanelProps) => {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
@@ -23,22 +26,50 @@ export const AIChatPanel = ({ isOpen, onClose }: AIChatPanelProps) => {
     },
   ]);
   const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
-  const handleSend = () => {
-    if (!input.trim()) return;
+  const handleSend = async () => {
+    if (!input.trim() || isLoading) return;
 
     const userMessage: Message = { role: "user", content: input };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
+    setIsLoading(true);
 
-    // Simulate AI response
-    setTimeout(() => {
+    try {
+      const { data, error } = await supabase.functions.invoke("ai-chat", {
+        body: {
+          messages: [...messages, userMessage],
+          code: currentCode,
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
+
       const aiMessage: Message = {
         role: "assistant",
-        content: "I can help you with that! This is a demo response. In a full implementation, I would connect to an AI API to generate real responses.",
+        content: data.reply,
       };
       setMessages((prev) => [...prev, aiMessage]);
-    }, 1000);
+    } catch (error: any) {
+      console.error("AI chat error:", error);
+      toast({
+        title: "AI Error",
+        description: error.message || "Failed to get AI response",
+        variant: "destructive",
+      });
+      
+      const errorMessage: Message = {
+        role: "assistant",
+        content: "Sorry, I encountered an error. Please try again.",
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -104,10 +135,11 @@ export const AIChatPanel = ({ isOpen, onClose }: AIChatPanelProps) => {
           />
           <Button
             onClick={handleSend}
+            disabled={isLoading}
             className="bg-ai-gradient text-primary-foreground hover:opacity-90"
             size="sm"
           >
-            <Send className="w-4 h-4" />
+            {isLoading ? <Sparkles className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </Button>
         </div>
       </div>
