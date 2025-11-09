@@ -5,18 +5,26 @@ import { FileExplorer } from "@/components/workspace/FileExplorer";
 import { CodeEditor } from "@/components/workspace/CodeEditor";
 import { PreviewPane } from "@/components/workspace/PreviewPane";
 import { AIChatPanel } from "@/components/workspace/AIChatPanel";
+import { GitPanel } from "@/components/workspace/GitPanel";
+import { DependenciesPanel } from "@/components/workspace/DependenciesPanel";
+import { TerminalPanel } from "@/components/workspace/TerminalPanel";
+import { ExecutionPanel } from "@/components/workspace/ExecutionPanel";
+import { DeploymentPanel } from "@/components/workspace/DeploymentPanel";
+import { ExportImportPanel } from "@/components/workspace/ExportImportPanel";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFiles } from "@/hooks/useFiles";
 import { getTemplate } from "@/lib/templates";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Code2 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Workspace = () => {
   const [isAIChatOpen, setIsAIChatOpen] = useState(true);
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
   const [currentFileId, setCurrentFileId] = useState<string | null>(null);
   const [code, setCode] = useState("");
+  const [activeTab, setActiveTab] = useState("git");
   const { user, loading } = useAuth();
   const { files, updateFile, createFile } = useFiles(currentProjectId);
   const navigate = useNavigate();
@@ -38,7 +46,6 @@ const Workspace = () => {
   }, [currentFileId, files]);
 
   useEffect(() => {
-    // Auto-select first file when files are loaded
     if (files.length > 0 && !currentFileId) {
       setCurrentFileId(files[0].id);
     }
@@ -46,8 +53,7 @@ const Workspace = () => {
 
   const handleProjectSelect = async (projectId: string) => {
     setCurrentProjectId(projectId);
-    
-    // Get project details to check template
+
     const { data: project } = await supabase
       .from("projects")
       .select("*")
@@ -55,7 +61,6 @@ const Workspace = () => {
       .single();
 
     if (project && files.length === 0) {
-      // Initialize project with template files
       const template = getTemplate(project.template);
       if (template) {
         for (const file of template.files) {
@@ -96,21 +101,55 @@ const Workspace = () => {
         onProjectSelect={handleProjectSelect}
         onSave={handleSave}
       />
-      
+
       <div className="flex-1 flex overflow-hidden relative">
         <FileExplorer
           projectId={currentProjectId}
           currentFileId={currentFileId}
           onFileSelect={setCurrentFileId}
         />
-        
-        <div className="flex-1 flex">
-          <CodeEditor
-            code={code}
-            onChange={setCode}
-            language="typescript"
-          />
-          <PreviewPane code={code} />
+
+        <div className="flex-1 flex flex-col">
+          <div className="flex-1 flex">
+            <CodeEditor
+              code={code}
+              onChange={setCode}
+              language="typescript"
+            />
+            <PreviewPane code={code} />
+          </div>
+
+          <div className="h-48 border-t overflow-hidden">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
+              <TabsList className="rounded-none border-b w-full justify-start h-8">
+                <TabsTrigger value="git" className="text-xs">Git</TabsTrigger>
+                <TabsTrigger value="deps" className="text-xs">Dependencies</TabsTrigger>
+                <TabsTrigger value="terminal" className="text-xs">Terminal</TabsTrigger>
+                <TabsTrigger value="execution" className="text-xs">Execution</TabsTrigger>
+                <TabsTrigger value="deploy" className="text-xs">Deploy</TabsTrigger>
+                <TabsTrigger value="export" className="text-xs">Export</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="git" className="flex-1 overflow-hidden">
+                <GitPanel projectId={currentProjectId} />
+              </TabsContent>
+              <TabsContent value="deps" className="flex-1 overflow-hidden">
+                <DependenciesPanel projectId={currentProjectId} />
+              </TabsContent>
+              <TabsContent value="terminal" className="flex-1 overflow-hidden">
+                <TerminalPanel projectId={currentProjectId} />
+              </TabsContent>
+              <TabsContent value="execution" className="flex-1 overflow-hidden">
+                <ExecutionPanel projectId={currentProjectId} code={code} />
+              </TabsContent>
+              <TabsContent value="deploy" className="flex-1 overflow-hidden">
+                <DeploymentPanel projectId={currentProjectId} />
+              </TabsContent>
+              <TabsContent value="export" className="flex-1 overflow-hidden">
+                <ExportImportPanel projectId={currentProjectId} />
+              </TabsContent>
+            </Tabs>
+          </div>
         </div>
 
         <AIChatPanel
